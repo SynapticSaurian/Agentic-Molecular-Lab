@@ -24,6 +24,9 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
@@ -317,6 +320,21 @@ class StartRun(BaseModel):
 def config():
     active = next((h.id for h in HANDLES.values() if h.status == "running"), None)
     return {"llm_available": bool(os.getenv("ANTHROPIC_API_KEY")), "active_run": active}
+
+
+class KeyPayload(BaseModel):
+    api_key: str
+
+
+@app.post("/api/config/key")
+def set_api_key(body: KeyPayload):
+    key = body.api_key.strip()
+    if key:
+        os.environ["ANTHROPIC_API_KEY"] = key
+        # Also persist to .env so future runs remember it
+        env_file = Path(__file__).resolve().parents[1] / ".env"
+        env_file.write_text(f"ANTHROPIC_API_KEY={key}\n")
+    return {"ok": True, "llm_available": bool(os.getenv("ANTHROPIC_API_KEY"))}
 
 
 @app.get("/api/runs")

@@ -71,6 +71,7 @@ const post = (url: string, body?: unknown) =>
 
 export const api = {
   config: () => req<Config>('/api/config'),
+  setKey: (key: string) => post('/api/config/key', { api_key: key }),
   runs: () => req<RunRow[]>('/api/runs'),
   run: (id: string) => req<RunState>(`/api/runs/${id}`),
   start: (b: StartBody) => post('/api/runs', b),

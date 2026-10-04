@@ -31,11 +31,22 @@ export default function Setup() {
   const [ask, setAsk] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [keyInput, setKeyInput] = useState('')
+  const [showKeyInput, setShowKeyInput] = useState(false)
 
   const branches = (['a', 'b', 'c'] as const).filter(k => br[k]).join('')
   const nb = branches.length
   const liveOk = !!cfg?.llm_available
   const active = cfg?.active_run
+
+  const saveKey = async () => {
+    if (!keyInput.trim()) return
+    try {
+      await api.setKey(keyInput.trim())
+      setLive(true)
+      setShowKeyInput(false)
+    } catch (e) { setErr((e as Error).message) }
+  }
 
   const start = async () => {
     setBusy(true); setErr(null)
@@ -82,8 +93,28 @@ export default function Setup() {
                 <span className="block h-[26px] w-[26px] rounded-full bg-canvas transition-transform duration-300" style={{ transform: `translateX(${adv ? 24 : 0}px)` }} />
               </button>
             </Row>
-            <Row title="Mode" hint={live ? 'Real Haiku / Sonnet calls. Costs tokens and takes longer.' : liveOk ? 'Offline mock. Free and fast, but it is a plumbing test, not an LLM.' : 'Offline mock. Live needs ANTHROPIC_API_KEY set where the server runs.'}>
-              <Seg value={live ? 'live' : 'mock'} onChange={v => setLive(v === 'live')} options={[{ v: 'mock', label: 'Offline mock' }, { v: 'live', label: 'Live LLM', disabled: !liveOk }]} />
+            <Row title="Mode" hint={
+              live ? 'Real Haiku / Sonnet calls. Costs tokens and takes longer.'
+                : liveOk ? 'Offline mock. Free and fast, but it is a plumbing test, not an LLM.'
+                : (
+                  <span>
+                    Offline mock.{' '}
+                    <button type="button" onClick={() => setShowKeyInput(!showKeyInput)} className="cursor-pointer font-medium underline text-ink">
+                      {showKeyInput ? 'Hide API key input' : 'Enter Anthropic API key'}
+                    </button>
+                  </span>
+                )
+            }>
+              <div className="flex flex-col items-end gap-2">
+                <Seg value={live ? 'live' : 'mock'} onChange={v => setLive(v === 'live')} options={[{ v: 'mock', label: 'Offline mock' }, { v: 'live', label: 'Live LLM', disabled: !liveOk }]} />
+                {showKeyInput && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <input type="password" placeholder="sk-ant-..." value={keyInput} onChange={e => setKeyInput(e.target.value)}
+                      className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-ink w-48" />
+                    <button type="button" onClick={saveKey} className="btn btn-primary px-3 py-1 text-xs">Save</button>
+                  </div>
+                )}
+              </div>
             </Row>
             <Row title="Seed molecules" hint={cold ? '5 random ZINC molecules: the fair comparison with cold-start methods.' : '5 known DRD2 ligands. The oracle already scores three of them near 1.0, which flatters every comparison.'}>
               <Seg value={cold ? 'cold' : 'warm'} onChange={v => setCold(v === 'cold')} options={[{ v: 'warm', label: 'Known' }, { v: 'cold', label: 'Cold' }]} />
@@ -106,7 +137,7 @@ export default function Setup() {
   )
 }
 
-function Row({ title, hint, children, last }: { title: string; hint: string; children: React.ReactNode; last?: boolean }) {
+function Row({ title, hint, children, last }: { title: string; hint: React.ReactNode; children: React.ReactNode; last?: boolean }) {
   return (
     <div className={`flex items-center justify-between gap-4 py-5 ${last ? '' : 'border-b border-line'}`}>
       <div><div className="text-lg font-semibold">{title}</div><div className="mt-[3px] max-w-[380px] text-sm text-mute">{hint}</div></div>

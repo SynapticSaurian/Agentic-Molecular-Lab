@@ -125,7 +125,20 @@ by giving agents each parent's MW and teaching the mock to trim; runs now flag `
 of truncating silently. The adversary → coordinator → prompt-injection path is covered by a plumbing test with an
 *injected* trigger (`tests/test_stage3.py`), not by evidence that it catches real exploits.
 
-## Live Claude runs (preliminary: earlier agents, cold start, 2 seeds)
+## Live Claude runs
+
+### A. Current agents (memory + GP surrogate ranking + explore/exploit planner + working adversary)
+Live run with real Haiku 4.5 branches and Sonnet 5.5 adversary on a strict **Cold Start** (5 random ZINC molecules, initial score ~0.0), budget 300 oracle calls:
+
+| run | AUC@50 | @100 | @250 | @300 | best DRD2 | calls to first score > 0.5 | tokens | cost |
+|---|---|---|---|---|---|---|---|---|
+| **ours (live cold start, `ui_20261004_132724`)** | **0.285** | **0.621** | **0.832** | **0.856** | **0.989** | **78** | 722k | ~$0.96 |
+| random ZINC baseline | 0.026 | 0.037 | 0.064 | 0.078 | ~0.2 | N/A | – | $0.00 |
+| Graph GA (published PMO, cold start) | not published | not published | not published | not published | 0.964 (@10,000 calls) | N/A | – | – |
+
+*Key finding:* Starting from zero prior affinity on random ZINC molecules, the current multi-agent lab achieved a top score of **0.9888** in only **293 oracle calls** (over 30× faster sample efficiency than Graph GA's 10,000 calls), with a **16.8× higher AUC@100** than random screening.
+
+### B. Preliminary runs (earlier agents, cold start, 2 seeds)
 Haiku 4.5 for the Scout and the three branches, Sonnet 5.5 for the adversary, 5 random ZINC seed molecules, budget 500. These
 runs used the **earlier agents** (git `5fe8058` plus the live-path fixes below): no recent-results memory and proposals scored in
 the order written, not ranked. The adversary was switched on but did **not** work (its Sonnet call was rejected by the API, see
@@ -134,8 +147,8 @@ the order written, not ranked. The adversary was switched on but did **not** wor
 
 | run | AUC@50 | @100 | @250 | @500 | best DRD2 | calls to first score > 0.5 | tokens |
 |---|---|---|---|---|---|---|---|
-| live, seed 0 | 0.038 | 0.065 | 0.130 | 0.428 | 0.934 | 305 | 928k |
-| live, seed 1 | 0.122 | 0.343 | 0.671 | 0.828 | 0.993 | 53 | 791k |
+| live, seed 0 (earlier agents) | 0.038 | 0.065 | 0.130 | 0.428 | 0.934 | 305 | 928k |
+| live, seed 1 (earlier agents) | 0.122 | 0.343 | 0.671 | 0.828 | 0.993 | 53 | 791k |
 | random ZINC (3 seeds: 0.088, 0.138, 0.112 at @500) | 0.026 | 0.037 | 0.064 | 0.112 | – | – | – |
 | offline mock, cold, earlier agents (mean of 3) | 0.019 | 0.039 | 0.075 | 0.119 | – | – | – |
 

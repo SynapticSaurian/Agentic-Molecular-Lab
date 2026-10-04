@@ -1,0 +1,66 @@
+{
+ "budget": 500,
+ "llm_mode": "anthropic",
+ "exploit_mock": false,
+ "seed_mode": "cold",
+ "ours": {
+  "50": {
+   "mean": 0.2852,
+   "var": 0.0,
+   "values": [
+    0.2852
+   ]
+  },
+  "100": {
+   "mean": 0.621,
+   "var": 0.0,
+   "values": [
+    0.621
+   ]
+  },
+  "250": {
+   "mean": 0.8317,
+   "var": 0.0,
+   "values": [
+    0.8317
+   ]
+  },
+  "500": {
+   "mean": 0.9074,
+   "var": 0.0,
+   "values": [
+    0.9074
+   ]
+  }
+ },
+ "ablated": {},
+ "trigger_rounds": [
+  17
+ ],
+ "acted_rounds": [
+  5
+ ],
+ "adversary_calls": [
+  5
+ ],
+ "tokens": [
+  {
+   "input_tokens": 627115,
+   "output_tokens": 95585,
+   "calls": 129
+  }
+ ],
+ "seeds": [
+  0
+ ],
+ "random": {},
+ "run_ids": {
+  "ours": [
+   "ui_20261004_132724"
+  ],
+  "ablated": []
+ },
+ "notes": [
+  "Live Claude 3.5 run on Cold start (budget 300)"
+ ]
+}

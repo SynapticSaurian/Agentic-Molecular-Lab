@@ -2,12 +2,12 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-backend/data/*
-!backend/data/trajectories/
-backend/data/trajectories/*
-!backend/data/trajectories/.gitkeep
 oracle_failures.log
 .env
+.env.*
 .diskcache/
 frontend/node_modules/
-frontend/dist/
+backend/data/*.tab
+backend/data/*.npy
+backend/data/drd2_support_vectors.npy
+backend/data/oracle/

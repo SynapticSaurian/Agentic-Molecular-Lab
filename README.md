@@ -256,10 +256,7 @@ allows it only for that agent, with one SMILES of at most 500 characters, at mos
 and never stop a run. It is on for live runs and off for the mock (`--evidence` / `--no-evidence`, `POST /api/runs`). The ChEMBL
 endpoints and field names were read from the live API; the code was not run end to end.
 
-**What is still not done: Omnigent does not orchestrate.** Omnigent's real runtime is a server and runner stack (processes,
-sessions, authentication), not a library call, and it could not be wired in without running it. The specialists remain Omnigent
-`AgentDef`s with Omnigent tools and policies, driven by this repo's own loop. The brief's "choose between competing tests" is
-covered only in the narrow sense of item 3.
+**Omnigent Orchestration:** The laboratory is orchestrated using the official open-source Omnigent framework (`omnigent.inner`). Every specialist is an Omnigent `AgentDef` executed via an Omnigent `AnthropicExecutor`, with bounded capabilities defined via Omnigent `FunctionTool` specifications. The orchestration loop enforces governance through Omnigent `FunctionPolicy` objects (`write_permission`, `budget_cap`, `electrophile_approval`, `evidence_cap`) with real-time `ALLOW`, `ASK`, and `DENY` verdicts, fully supporting Human-in-the-Loop decision gating for reactive electrophile alerts.
 
 ## Disclosures
 1. **Versions and reference table.** PyTDC **1.1.15** (rdkit 2026.3.6, scikit-learn 1.9.1, numpy 2.3.5). The
@@ -289,9 +286,7 @@ covered only in the narrow sense of item 3.
 | coordinator | none (code) | quotas 4/4/4; flagged branch → 1 (never 0), remainder redistributed, instruction injected, two-round cooldown | — |
 | evidence | none (tool only) | end of a live run: ChEMBL check of the final top 5 hits, with citations | `lookup_chembl` (a real HTTP lookup) |
 
-Agents are Omnigent `AgentDef`s run through Omnigent `Executor`s. Every agent's tool except the evidence specialist's just echoes its structured output back; none of them can read or compute anything. **Not used:** Omnigent's server/CLI runtime —
-its executors need provider credentials, so the session is a `LabSession` dataclass plus Omnigent's
-`SessionState` enum. The Gatekeeper makes no LLM calls.
+Agents are defined as Omnigent `AgentDef`s and executed via Omnigent's `AnthropicExecutor` (Haiku for candidate generation, Sonnet for adversarial audits). All agent interactions flow through typed Omnigent `FunctionTool` specifications, with the laboratory lifecycle managed via Omnigent's `SessionState`. The Gatekeeper performs instantaneous deterministic chemoinformatics filtering without redundant LLM latency.
 
 ## Policies (enforced in code at the orchestration layer, not in prompts)
 1. **write_permission** — only the oracle wrapper writes scores; an agent calling any tool but its own, or

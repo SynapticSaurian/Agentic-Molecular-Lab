@@ -70,7 +70,8 @@ def test_call_filters_and_detail(client):
     assert d["system_prompt"] == "sp" and len(d["outcomes"]) == 2
 
 
-def test_unknown_run_and_bad_input(client):
+def test_unknown_run_and_bad_input(client, monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     c, _ = client
     assert c.get("/api/runs/nope").status_code == 404
     assert c.get("/api/runs/..%2Fetc").status_code == 404

@@ -18,7 +18,7 @@ import httpx
 
 BASE = "https://www.ebi.ac.uk/chembl/api/data"
 DRD2_TARGET = "CHEMBL217"
-SIMILARITY_CUTOFF = 70  # percent; ChEMBL accepts 40-100
+SIMILARITY_CUTOFF = 50  # percent; ChEMBL accepts 40-100 (50% catches nearest pharmacophore analogues)
 MAX_NEIGHBOURS = 10
 ACTIVE_PCHEMBL = 6.0  # pChEMBL >= 6 means a potency of 1 uM or better
 TIMEOUT = 60.0

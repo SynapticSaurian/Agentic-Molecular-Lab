@@ -16,11 +16,12 @@ def cell(d, k):
 def main(tag="main"):
     r = json.loads((ROOT / "data" / f"results_{tag}.json").read_text())
     rand = list(r["random"].values())
-    rc = {c: f"{np.mean([x[c] for x in rand]):.3f} (var {np.var([x[c] for x in rand], ddof=1):.1e})" for c in COLS + ["10000"]}
+    rc = {c: f"{np.mean([x[c] for x in rand]):.3f} (var {np.var([x[c] for x in rand], ddof=1):.1e})" if all(c in x for x in rand) else "n/a" for c in COLS + ["10000"]}
+    sc_val = f"{r['single_call']['50']:.3f}" if "single_call" in r and "50" in r["single_call"] else "not run"
     rows = [
         ("ours (adversary on)", [cell(r["ours"], c) for c in COLS] + ["N/A — budget-capped by design"]),
         ("ours-ablated (adversary off)", [cell(r["ablated"], c) for c in COLS] + ["N/A — budget-capped by design"]),
-        ("single-call LLM", ["not run (no API key)"] * 5 + ["N/A (50 molecules total)"]),
+        ("single-call LLM", [sc_val] + ["N/A (50 molecules total)"] * 4 + ["N/A (50 molecules total)"]),
         ("random (ZINC)", [rc[c] for c in COLS] + [rc["10000"]]),
         ("Graph GA (published, PMO)", ["not published"] * 5 + ["0.964 ± 0.012"]),
     ]

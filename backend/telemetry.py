@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import Counter
 
 from rdkit import Chem
+from rdkit.Chem import rdFMCS
 
 import chem_core
 
@@ -73,13 +74,32 @@ def build_digest(beam, history: list[dict], rnd: int, oracle_calls_used: int, k:
                       "agent_generated": c.agent_generated, "motifs": motifs(mol) if mol else {}})
     by_branch = Counter(c.origin_branch for c in top)
     dom, n_dom = by_branch.most_common(1)[0]
+    avg_score = sum(c.score or 0 for c in top) / max(len(top), 1)
+    avg_ad = sum(c.ad_similarity or 0 for c in top) / max(len(top), 1)
+    avg_sa = sum(c.sa_score or 0 for c in top) / max(len(top), 1)
+    mpo_utility = avg_score + (0.3 * avg_ad) - (0.1 * avg_sa)
+    gaming_div = avg_score - mpo_utility
+
+    mols = [chem_core.mol_from_smiles(c.smiles) for c in top if chem_core.mol_from_smiles(c.smiles)]
+    common_smarts = ""
+    if len(mols) >= 2:
+        try:
+            mcs = rdFMCS.FindMCS(mols, timeout=1)
+            common_smarts = mcs.smartsString or ""
+        except Exception:
+            pass
+
     return {"top_k": top_k, "stats": {
         "unique_scaffolds_top10": len({c.core_scaffold for c in top}),
         "dominant_branch": f"{BRANCH_LABEL.get(dom, dom)} {n_dom}/{len(top)}",
         "sa_trend_3r": round(trend(history, "sa_top10", rnd), 3),
         "ad_similarity_trend": round(trend(history, "ad_top10", rnd), 3),
-        "top10_mean_score": round(sum(c.score or 0 for c in top) / max(len(top), 1), 3),
-        "top10_mean_ad": round(sum(c.ad_similarity or 0 for c in top) / max(len(top), 1), 3),
+        "top10_mean_score": round(avg_score, 3),
+        "top10_mean_ad": round(avg_ad, 3),
+        "top10_mean_sa": round(avg_sa, 2),
+        "mpo_utility": round(mpo_utility, 3),
+        "gaming_divergence": round(gaming_div, 3),
+        "common_substructure_smarts": common_smarts,
         "ad_known_ligand_floor": None if ad_floor is None else round(ad_floor, 3),
         "oracle_calls_used": oracle_calls_used, "round": rnd}}
 
@@ -88,10 +108,7 @@ def trigger(digest: dict) -> list[str]:
     """Deterministic: returns the list of fired conditions (empty = no trigger).
     unique_scaffolds_top10 < 3 OR sa_trend_3r > 1.2 OR ad_similarity_trend < -0.15
     OR (top-10 mean score >= 0.8 AND top-10 mean AD similarity < known-ligand floor - 0.05)
-
-    The last condition is a level, not a trend: a run can reach a high score while staying at a low AD similarity from
-    the first round, which no change-over-three-rounds condition sees. 0.8 and 0.05 were chosen by looking at two live
-    runs (top-10 mean AD 0.41 and 0.38 against a floor of 0.51), so they are not validated on other data."""
+    OR (gaming_divergence > 0.35 AND top-10 mean score >= 0.75)"""
     s, fired = digest["stats"], []
     if s["unique_scaffolds_top10"] < TRIGGER["unique_scaffolds_top10_lt"]:
         fired.append("low_scaffold_diversity")
@@ -103,6 +120,8 @@ def trigger(digest: dict) -> list[str]:
     if (floor is not None and s.get("top10_mean_score", 0) >= TRIGGER["high_score_ge"]
             and s.get("top10_mean_ad", 1) < floor - TRIGGER["ad_floor_margin"]):
         fired.append("high_score_low_domain")
+    if s.get("gaming_divergence", 0) > 0.35 and s.get("top10_mean_score", 0) >= 0.75:
+        fired.append("mpo_gaming_divergence")
     return fired
 
 

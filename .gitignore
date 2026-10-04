@@ -11,3 +11,4 @@ backend/data/*.tab
 backend/data/*.npy
 backend/data/drd2_support_vectors.npy
 backend/data/oracle/
+backend/data/chats/*test*.jsonl
